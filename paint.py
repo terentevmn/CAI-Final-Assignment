@@ -1,4 +1,6 @@
 import pygame
+from PIL import Image
+import numpy as np
 
 def draw() -> None:
 
@@ -32,6 +34,7 @@ def draw() -> None:
     firstPointSelected = False
     firstPos = None
     selectedColor = colors[0]
+    outputarray = [[(0,0,0) for i in range(256)] for j in range(256)]
     
     def drawColors():
         # Draws color picker
@@ -56,7 +59,38 @@ def draw() -> None:
             fp, sp = getRectsFromPoints(firstPos, pygame.mouse.get_pos())
             pygame.draw.rect(screen, selectedColor, [fp[0],fp[1],sp[0]-fp[0],sp[1]-fp[1]])
 
+    def drawOutputImage():
+        for i in range(256):
+            for j in range(256):
+                pygame.draw.rect(screen, outputarray[i][j], [256*2 + j*2, i*2, 2, 2])
+        
+        
+    def gridToImage():
+        grid = [[(0,0,0) for i in range(256)] for j in range(256)]
+        for fp, sp, cl in drawings:
+            for i in range(fp[0]//2,sp[0]//2+1):
+                for j in range(fp[1]//2,sp[1]//2+1):
+                    grid[i][j] = cl
+        output_image = Image.fromarray(np.uint8(grid))
+        output_image.save("drawing.jpg")
+        
+    def imageToGrid():
+        imageFound = False
+        try:
+            image = Image.open("drawing.jpg")
+            imageFound = True
+        except:
+            pass
+        
+        if not imageFound:
+            return 
+        
+        imageout = np.asarray(image)
+        for i in range(256):
+            for j in range(256):
+                outputarray[i][j] = tuple(imageout[i][j])
 
+        
     # -------- Main Program Loop -----------
     while not done:
         # Events
@@ -66,7 +100,6 @@ def draw() -> None:
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 posx,posy = pygame.mouse.get_pos()
-                print(posx,posy)
                 if 0 <= posx < 256*2 and 0 <= posy < 256*2:
                     # Is within board:
                     if not firstPointSelected:
@@ -81,12 +114,9 @@ def draw() -> None:
                         rectstart,sizes = getRectsFromPoints(firstPos, secondPos)
                         drawings.append((rectstart, sizes, selectedColor))
 
-                        print(drawings)
-
                 elif posy > 256*2:
                     ind = min(posx//40, len(colors)-1) # prevents index errors
                     selectedColor = colors[ind]
-                    print(selectedColor)
 
 
             elif event.type == pygame.KEYDOWN:
@@ -96,13 +126,18 @@ def draw() -> None:
                         drawings.pop()
                     else:
                         print("Nothing to undo!")
-
+                elif event.key == pygame.K_SPACE:
+                    gridToImage()
+                elif event.key == pygame.K_LEFT:
+                    imageToGrid()
 
         
         screen.fill(BLACK)
         
         drawColors()
         drawRectangles()
+        drawOutputImage()
+        
         # GUI
         pygame.draw.line(screen, (255,255,255), (256*2,0),(256*2,256*2+40))
         pygame.draw.line(screen, (255,255,255), (0, 256*2), (256*2, 256*2))
