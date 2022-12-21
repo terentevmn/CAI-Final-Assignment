@@ -2,6 +2,18 @@ import pygame
 from PIL import Image
 import numpy as np
 
+"""
+TODO:
+- Random button
+- Link
+"""
+
+class TextInput:
+    
+    def __init__(self):
+        self.x, self.y = 256,256
+        self.width, self.height = 200, 40
+
 
 
 class App:
@@ -9,10 +21,11 @@ class App:
     def __init__(self):
         self.scaleAppX = 2
         self.scaleAppY = 2
-        self.imageNameOut = 'drawng.png'
+        self.imageNameOut = 'drawing.png'
         self.imageNameIn = 'drawing.png'
 
         self.menuWidth = 125
+        self.picture = None
 
     def draw(self) -> None:
 
@@ -30,6 +43,7 @@ class App:
         ###### PROGRAM VARS ####
 
         drawings = []
+        cursor = 0
         colors = [
             (0,6,217),              # BACKGROUND
             (14,60,251),            # WALL
@@ -50,7 +64,17 @@ class App:
         firstPointSelected = False
         firstPos = None
         selectedColor = colors[0]
-        outputarray = [[(0,0,0) for i in range(256)] for j in range(256)]
+
+        ####### ICONS #########
+
+        icons = {
+            "undo": pygame.image.load("./assets/undo.png"),
+            "redo": pygame.image.load("./assets/redo.png"),
+            "clear": pygame.image.load("./assets/clear.png"),
+            "import": pygame.image.load("./assets/import.png"),
+            "save": pygame.image.load("./assets/save.png"),
+            "random": pygame.image.load("./assets/random.png"),
+        }
         
         #### HELP VARS #########
         # Color picking menu
@@ -80,20 +104,15 @@ class App:
         def drawRectangles():
             pygame.draw.rect(screen, colors[0], [self.menuWidth, 0, 256*self.scaleAppX, 256*self.scaleAppY])
             # Draws drawn rectangles
-            for firstpos, secondpos, color in drawings:
+            for firstpos, secondpos, color in drawings[:cursor]:
                 pygame.draw.rect(screen, color, [firstpos[0],firstpos[1],secondpos[0]-firstpos[0],secondpos[1]-firstpos[1]])
 
             if firstPointSelected:
                 p = list(pygame.mouse.get_pos())
-                p[0] = max(p[0],self.menuWidth)
+                p[0] = min(max(p[0],self.menuWidth),self.menuWidth + 256*self.scaleAppX)
                 fp, sp = getRectsFromPoints(firstPos, p)
                 pygame.draw.rect(screen, selectedColor, [fp[0],fp[1],sp[0]-fp[0],sp[1]-fp[1]])
-
-        def drawOutputImage():
-            for i in range(256):
-                for j in range(256):
-                    pygame.draw.rect(screen, outputarray[i][j], [256*self.scaleAppX + j*self.scaleAppX + self.menuWidth, i*self.scaleAppY, self.scaleAppX, self.scaleAppY])
-                
+   
         def gridToImage():
             grid = [[colors[0] for i in range(256)] for j in range(256)]
             for fp, sp, cl in drawings:
@@ -104,30 +123,55 @@ class App:
                         grid[i][j] = cl
             output_image = Image.fromarray(np.uint8(grid))
             output_image.save(self.imageNameOut)
+        
+        def drawResult():
+            if self.picture != None:
+                picture = pygame.transform.scale(self.picture, (256*self.scaleAppX, 256*self.scaleAppY))
+                rect = picture.get_rect()
+                rect = rect.move((256*self.scaleAppX + self.menuWidth, 0))
+                screen.blit(picture, rect)
             
-        def imageToGrid():
-            imageFound = False
-            try:
-                image = Image.open(self.imageNameIn)
-                imageFound = True
-            except:
-                pass
-            
-            if not imageFound:
-                return 
-            
-            imageout = np.asarray(image)
-            for i in range(256):
-                for j in range(256):
-                    outputarray[i][j] = tuple(imageout[i][j])
-
         def drawGUI():
             # Dividing middle line input|output
             pygame.draw.line(screen, (255,255,255), (256*self.scaleAppX + self.menuWidth,0),(256*self.scaleAppX + self.menuWidth,256*self.scaleAppY))
             # Color menu | input
             pygame.draw.line(screen, (255,255,255), (self.menuWidth, 0), (self.menuWidth,self.scaleAppY*256))
 
-               
+            # Icons
+            
+            starty = (sizeY+margin)*len(colors) + startpos
+
+            icon = icons["redo"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(0,starty))
+            icon = icons["undo"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(self.menuWidth//2,starty))
+            icon = icons["save"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(0,starty + self.menuWidth//2))
+            icon = icons["import"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(self.menuWidth//2,starty+self.menuWidth//2))
+            icon = icons["clear"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(0,starty + 2*self.menuWidth//2))
+            icon = icons["random"]
+            icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
+            screen.blit(icon,(self.menuWidth//2,starty + 2*self.menuWidth//2))
+            
+        #### BUTTON FUNCTIONS ##
+        def clearDrawings():
+            # remove all drawings
+            drawings.clear()
+
+        def importImage():
+            try:
+                self.picture = pygame.image.load(self.imageNameIn)
+            except Exception as e:
+                print(e)
+
+          
         # -------- Main Program Loop -----------
         while not done:
             # Events
@@ -149,25 +193,50 @@ class App:
                             secondPos = (posx,posy)
                             
                             rectstart,sizes = getRectsFromPoints(firstPos, secondPos)
+                            drawings[cursor:] = []
                             drawings.append((rectstart, sizes, selectedColor))
+                            cursor += 1
 
-                    elif posx <= self.menuWidth:
+                    elif posx <= self.menuWidth and posy <= (sizeY+margin)*len(colors) + startpos:
                         # Get starting pos off
                         posy -= startpos
                         ind = min(len(colors)-1, posy//(margin+sizeY))
                         selectedColor = colors[ind]
 
+                    elif posx <= self.menuWidth and posy > (sizeY+margin)*len(colors) + startpos:
+                        starty = posy - ((sizeY+margin)*len(colors) + startpos)
+                        if posx <= self.menuWidth//2:
+                            iconpos = starty//(self.menuWidth//2)
+                            if iconpos == 0:
+                                if cursor < len(drawings):
+                                    cursor += 1
+                                else:
+                                    print("Nothing to redo!")
+                            elif iconpos == 1:
+                                gridToImage()
+                                print("Saved")
+                            elif iconpos == 2:
+                                clearDrawings()
+                                print("Cleared")
+                        else:
+                            iconpos = starty//(self.menuWidth//2)
+                            if iconpos == 0:
+                                if cursor > 0:
+                                    cursor -= 1
+                                else:
+                                    print("Nothing to undo!")
+                            elif iconpos == 1:
+                                importImage()
+                                print("Imported")
+                            elif iconpos == 2:
+                                print("Random")
+
+
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_z:
-                        # UNDO
-                        if len(drawings) > 0:
-                            drawings.pop()
-                        else:
-                            print("Nothing to undo!")
-                    elif event.key == pygame.K_SPACE:
-                        gridToImage()
-                    elif event.key == pygame.K_LEFT:
-                        imageToGrid()
+                        pass
+
+                        
                         
 
             
@@ -175,11 +244,8 @@ class App:
             
             drawColors()
             drawRectangles()
-            drawOutputImage()
+            drawResult()
             drawGUI()
-
-            # GUI
-            
 
             # Blit to screen
             pygame.display.update()
