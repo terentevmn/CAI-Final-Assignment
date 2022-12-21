@@ -190,7 +190,7 @@ def get_image(image_file):
     for inp in test_dataset_short.take(1):
         generate_image(generator, inp, image_file)
 
-
+assert tf.__version__ == "2.9.2"
 
 generator = Generator()
 discriminator = Discriminator()
@@ -198,7 +198,7 @@ discriminator = Discriminator()
 generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
-checkpoint_dir = './training_checkpoints'
+checkpoint_dir = './model/training_checkpoints/'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  discriminator_optimizer=discriminator_optimizer,

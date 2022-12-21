@@ -5,6 +5,7 @@ from os import listdir, remove
 from os.path import isfile, join
 from random import choice
 import sys
+import shutil
 
 sys.path.insert(0,"./model")
 from model import get_image
@@ -22,7 +23,6 @@ class App:
         self.scaleAppY = 2
         self.imageNameOut = 'drawing'
         self.imageNameIn = 'drawing'
-        self.autoUpdating = True
 
         self.menuWidth = 125
         self.picture = None
@@ -71,6 +71,8 @@ class App:
         blink = 0
         maxblink = 50
         showBlink = True
+
+        shouldUpdate = True
 
         ####### ICONS #########
 
@@ -140,9 +142,8 @@ class App:
             """
             Saves an image of your work as well as a cache file to retrieve it later to work on
             """
-            # Image 
+            # Image drawing
             grid = [[colors[0] for i in range(256)] for j in range(256)]
-
             for i in range(256):
                 for j in range(256):
                     grid[i][j] = screen.get_at((self.menuWidth + j * self.scaleAppX, i * self.scaleAppY))
@@ -151,13 +152,18 @@ class App:
             output_image = Image.fromarray(np.uint8(grid)).convert('RGB')
             output_image.save("./drawings/"+self.imageNameOut+".jpg")
             
+            # Image result
+            shutil.copy("./drawings/~wcache.out.jpg", "./drawings/"+self.imageNameOut+".out.jpg")
+
             # Undo
             with open("./drawings/"+self.imageNameOut+".cache.txt","w+") as f:
-                for item in drawings:
+                print(drawings)
+                for item in drawings[:cursor]:
                     if type(item) == tuple:
                         a,b,c = item
                         f.write(' '.join([str(x) for x in a]) + " " + ' '.join([str(x) for x in b]) + " " + ' '.join([str(x) for x in c]) + "\n")
                     else:
+                        print(item)
                         f.write(list(item.keys())[0]+"\n")
         
         def importWork():
@@ -171,7 +177,7 @@ class App:
                     try:
                         # Try to extract numbers, else, its a file name
                         entry = [int(x) for x in i.split()]
-                        entry = [(entry[0],entry[1]),(entry[2],entry[3]),(entry[4],entry[5],entry[6])]
+                        entry = ((entry[0],entry[1]),(entry[2],entry[3]),(entry[4],entry[5],entry[6]))
                         lst.append(entry)
                     except:
                         lst.append({i:pygame.image.load("./random/"+i)})
@@ -310,10 +316,7 @@ class App:
                             cursor += 1
 
                             # for automatic image generation:
-                            if self.autoUpdating:
-                                generateModelImage()
-                            
-
+                            shouldUpdate = True
 
                     elif posx <= self.menuWidth and posy <= (sizeY+margin)*len(colors) + startpos:
                         # Get starting pos off
@@ -325,38 +328,40 @@ class App:
                         starty = posy - ((sizeY+margin)*len(colors) + startpos)
                         if posx <= self.menuWidth//2:
                             iconpos = starty//(self.menuWidth//2)
-                            if iconpos == 0:
+                            if iconpos == 0: #REDO
                                 if cursor < len(drawings):
                                     cursor += 1
+                                    shouldUpdate = True
                                 else:
                                     print("Nothing to redo!")
-                            elif iconpos == 1:
+                            elif iconpos == 1: #SAVE
                                 input_active = True
                                 currentfunc = "save"
                                 text = ""
-                            elif iconpos == 2:
+                            elif iconpos == 2: #CLEAR
                                 clearDrawings()
+                                shouldUpdate = True
+                                cursor = 0
                         else:
                             iconpos = starty//(self.menuWidth//2)
-                            if iconpos == 0:
+                            if iconpos == 0: # UNDO
                                 if cursor > 0:
                                     cursor -= 1
+                                    shouldUpdate = True
                                 else:
                                     print("Nothing to undo!")
-                            elif iconpos == 1:
+                            elif iconpos == 1: #IMPORT
                                 input_active = True
                                 currentfunc = "import"
                                 text = ""
-                            elif iconpos == 2:
+                            elif iconpos == 2: #RANDOM
+                                drawings[cursor:] = []
                                 getRandom()
                                 cursor += 1
+                                shouldUpdate = True
                     
                     elif posx >= self.menuWidth + self.scaleAppX*256:
-                        # MAKE PICTURE, SEND TO MODEL, 
-                        generateModelImage()
-
-                        
-
+                        shouldUpdate = True
 
                 elif event.type == pygame.KEYDOWN and input_active: 
                     # For the input bar
@@ -364,6 +369,7 @@ class App:
                     blink = 0
                     if event.key == pygame.K_RETURN:
                         input_active = False
+                        shouldUpdate = True
                     elif event.key == pygame.K_BACKSPACE:
                         text =  text[:-1]
                     elif event.key == pygame.K_ESCAPE:
@@ -379,6 +385,11 @@ class App:
             drawRectangles()
             drawResult()
             drawGUI()
+
+            if shouldUpdate:
+                shouldUpdate = False
+                generateModelImage()
+
             if input_active:
                 blink = blink + 1
                 if blink > maxblink:
@@ -393,12 +404,15 @@ class App:
                     self.imageNameIn = text
                     drawings = importWork()
                     cursor = len(drawings)
+                    shouldUpdate = True
+                    
                 currentfunc = None
+            
+
+
             # Blit to screen
             pygame.display.update()
-
             clock.tick(clocktick)
-
             
         
         # Close the window and quit.
