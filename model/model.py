@@ -136,22 +136,11 @@ def Discriminator():
 def generate_image(model, input, filename):
   prediction = model(input, training=True)
   
-  output_image = Image.fromarray(np.uint8(prediction[0])).convert('RGB')
+  reverse_normalize_image = reverse_normalize_short(prediction[0])
+
+  # This is for saving the file:
+  output_image = Image.fromarray(np.uint8(reverse_normalize_image)).convert('RGB')
   output_image.save("./drawings/"+filename.split('.')[0]+".out.jpg")
-
-  #print(prediction[0])
-  # plt.figure(figsize=(15, 15))
-
-  # display_list = [input[0], prediction[0]]
-  # title = ['Input Image', 'Predicted Image']
-
-  # for i in range(2):
-  #   plt.subplot(1, 3, i+1)
-  #   plt.title(title[i])
-  #   # Getting the pixel values in the [0, 1] range to plot.
-  #   plt.imshow(display_list[i] * 0.5 + 0.5)
-  #   plt.axis('off')
-  # plt.show()
 
 ###############################
   
@@ -179,6 +168,11 @@ def normalize_short(input_image):
 
   return input_image
 
+def reverse_normalize_short(input_image):
+  input_image += 1
+  input_image *= 127.5 
+
+  return input_image
 ###############################
 
 def load_image_test_short(image_file):

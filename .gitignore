@@ -1,1 +1,2 @@
-model/training_checkpoints/
+/model/training_checkpoints/
+/model/__pycache__/
