@@ -1,0 +1,6 @@
+ipython==8.7.0
+matplotlib==3.4.3
+numpy==1.21.3
+Pillow==9.3.0
+pygame==2.1.0
+tensorflow==2.7.0

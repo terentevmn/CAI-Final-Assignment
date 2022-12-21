@@ -4,6 +4,11 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 from random import choice
+import sys
+
+sys.path.insert(0,"./model")
+from model import get_image
+
 
 """
 TODO:
@@ -143,10 +148,10 @@ class App:
 
 
             output_image = Image.fromarray(np.uint8(grid)).convert('RGB')
-            output_image.save(self.imageNameOut+".jpg")
+            output_image.save("./drawings/"+self.imageNameOut+".jpg")
             
             # Undo
-            with open(self.imageNameOut+".cache.txt","w+") as f:
+            with open("./drawings/"+self.imageNameOut+".cache.txt","w+") as f:
                 for item in drawings:
                     if type(item) == tuple:
                         a,b,c = item
@@ -159,7 +164,7 @@ class App:
             Imports cache file 
             """
             lst = []
-            with open(self.imageNameIn+".cache.txt","r") as f:
+            with open("./drawings/"+self.imageNameIn+".cache.txt","r") as f:
                 lines = [x.rstrip() for x in f.readlines()]
                 for i in lines:
                     try:
@@ -324,7 +329,8 @@ class App:
                     elif posx >= self.menuWidth + self.scaleAppX*256:
                         # STUB:
                         # MAKE PICTURE, SEND TO MODEL, 
-                        generateModelImage()
+                        #generateModelImage()
+                        get_image('building.jpg')
 
 
                 elif event.type == pygame.KEYDOWN and input_active: 
