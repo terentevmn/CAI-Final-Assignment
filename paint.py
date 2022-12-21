@@ -7,7 +7,6 @@ from random import choice
 
 """
 TODO:
-- undo cache
 - Link
 """
 
@@ -16,8 +15,8 @@ class App:
     def __init__(self):
         self.scaleAppX = 2
         self.scaleAppY = 2
-        self.imageNameOut = 'drawing.png'
-        self.imageNameIn = 'drawing.png'
+        self.imageNameOut = 'drawing'
+        self.imageNameIn = 'drawing'
 
         self.menuWidth = 125
         self.picture = None
@@ -143,8 +142,8 @@ class App:
                     grid[i][j] = screen.get_at((self.menuWidth + j * self.scaleAppX, i * self.scaleAppY))
 
 
-            output_image = Image.fromarray(np.uint8(grid))
-            output_image.save(self.imageNameOut)
+            output_image = Image.fromarray(np.uint8(grid)).convert('RGB')
+            output_image.save(self.imageNameOut+".jpg")
             
             # Undo
             with open(self.imageNameOut+".cache.txt","w+") as f:
@@ -255,9 +254,9 @@ class App:
 
             textFont = pygame.font.Font(None, 30*self.scaleAppX)
             if showBlink:
-                text_surf = textFont.render(text+"|", True, (0, 0, 0))
+                text_surf = textFont.render(text+"|.jpg", True, (0, 0, 0))
             else:
-                text_surf = textFont.render(text, True, (0, 0, 0))
+                text_surf = textFont.render(text+".jpg", True, (0, 0, 0))
             screen.blit(text_surf, text_surf.get_rect(center = (self.menuWidth + (256*self.scaleAppX)//2, size[1]//2)))
 
 
