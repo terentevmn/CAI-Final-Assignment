@@ -1,20 +1,15 @@
 import pygame
 from PIL import Image
 import numpy as np
+from os import listdir
+from os.path import isfile, join
+from random import choice
 
 """
 TODO:
-- Random button
+- undo cache
 - Link
 """
-
-class TextInput:
-    
-    def __init__(self):
-        self.x, self.y = 256,256
-        self.width, self.height = 200, 40
-
-
 
 class App:
 
@@ -65,6 +60,13 @@ class App:
         firstPos = None
         selectedColor = colors[0]
 
+        input_active = False
+        currentfunc = None
+        text = ""
+        blink = 0
+        maxblink = 50
+        showBlink = True
+
         ####### ICONS #########
 
         icons = {
@@ -104,8 +106,15 @@ class App:
         def drawRectangles():
             pygame.draw.rect(screen, colors[0], [self.menuWidth, 0, 256*self.scaleAppX, 256*self.scaleAppY])
             # Draws drawn rectangles
-            for firstpos, secondpos, color in drawings[:cursor]:
-                pygame.draw.rect(screen, color, [firstpos[0],firstpos[1],secondpos[0]-firstpos[0],secondpos[1]-firstpos[1]])
+            for i in drawings[:cursor]:
+                try:
+                    firstpos, secondpos, color = i
+                    pygame.draw.rect(screen, color, [firstpos[0],firstpos[1],secondpos[0]-firstpos[0],secondpos[1]-firstpos[1]])
+                except: # imported picture
+                    randomimage = pygame.transform.scale(i[list(i.keys())[0]], (256*self.scaleAppX, 256*self.scaleAppY))
+                    rect = randomimage.get_rect()
+                    rect = rect.move((self.menuWidth, 0))
+                    screen.blit(randomimage, rect)
 
             if firstPointSelected:
                 p = list(pygame.mouse.get_pos())
@@ -115,12 +124,12 @@ class App:
    
         def gridToImage():
             grid = [[colors[0] for i in range(256)] for j in range(256)]
-            for fp, sp, cl in drawings:
-                fp = [fp[0]-self.menuWidth,fp[1]]
-                sp = [sp[0]-self.menuWidth,sp[1]]
-                for i in range(fp[1]//self.scaleAppY,sp[1]//self.scaleAppY+1):
-                    for j in range(fp[0]//self.scaleAppX,sp[0]//self.scaleAppX+1):
-                        grid[i][j] = cl
+
+            for i in range(256):
+                for j in range(256):
+                    grid[i][j] = screen.get_at((self.menuWidth + j * self.scaleAppX, i * self.scaleAppY))
+
+
             output_image = Image.fromarray(np.uint8(grid))
             output_image.save(self.imageNameOut)
         
@@ -135,7 +144,7 @@ class App:
             # Dividing middle line input|output
             pygame.draw.line(screen, (255,255,255), (256*self.scaleAppX + self.menuWidth,0),(256*self.scaleAppX + self.menuWidth,256*self.scaleAppY))
             # Color menu | input
-            pygame.draw.line(screen, (255,255,255), (self.menuWidth, 0), (self.menuWidth,self.scaleAppY*256))
+            pygame.draw.line(screen, (255,255,255), (self.menuWidth-1, 0), (self.menuWidth-1,self.scaleAppY*256))
 
             # Icons
             
@@ -171,7 +180,26 @@ class App:
             except Exception as e:
                 print(e)
 
-          
+        def getRandom():
+            onlyfiles = [f for f in listdir('./random/') if isfile(join('./random', f))]
+            file = choice(onlyfiles)
+            drawings.append({file:pygame.image.load("./random/"+file)})
+        
+        def inputText():
+            # Alpha layer
+            s = pygame.Surface(size)        # the size of your rect
+            s.set_alpha(128)                # alpha level
+            s.fill((255,255,255))           # this fills the entire surface
+            screen.blit(s, (0,0))           # (0,0) are the top-left coordinates
+
+            textFont = pygame.font.Font(None, 30*self.scaleAppX)
+            if showBlink:
+                text_surf = textFont.render(text+"|", True, (255, 255, 255))
+            else:
+                text_surf = textFont.render(text, True, (255, 255, 255))
+            screen.blit(text_surf, text_surf.get_rect(center = (self.menuWidth + (256*self.scaleAppX)//2, size[1]//2)))
+
+
         # -------- Main Program Loop -----------
         while not done:
             # Events
@@ -213,11 +241,11 @@ class App:
                                 else:
                                     print("Nothing to redo!")
                             elif iconpos == 1:
-                                gridToImage()
-                                print("Saved")
+                                input_active = True
+                                currentfunc = "save"
+                                text = ""
                             elif iconpos == 2:
                                 clearDrawings()
-                                print("Cleared")
                         else:
                             iconpos = starty//(self.menuWidth//2)
                             if iconpos == 0:
@@ -226,19 +254,28 @@ class App:
                                 else:
                                     print("Nothing to undo!")
                             elif iconpos == 1:
-                                importImage()
-                                print("Imported")
+                                input_active = True
+                                currentfunc = "import"
+                                text = ""
                             elif iconpos == 2:
-                                print("Random")
+                                getRandom()
+                                cursor += 1
 
 
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z:
-                        pass
-
+                elif event.type == pygame.KEYDOWN and input_active: 
+                    # For the input bar
+                    showBlink = True
+                    blink = 0
+                    if event.key == pygame.K_RETURN:
+                        input_active = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        text =  text[:-1]
+                    elif event.key == pygame.K_ESCAPE:
+                        input_active = False
+                        currentfunc = None
+                    else:
+                        text += event.unicode
                         
-                        
-
             
             screen.fill((0,0,0))
             
@@ -246,7 +283,20 @@ class App:
             drawRectangles()
             drawResult()
             drawGUI()
-
+            if input_active:
+                blink = blink + 1
+                if blink > maxblink:
+                    blink = 0
+                    showBlink = not showBlink
+                inputText()
+            elif currentfunc != None:
+                if currentfunc == "save":
+                    self.imageNameOut = text
+                    gridToImage()
+                elif currentfunc == "import":
+                    self.imageNameIn = text
+                    importImage()
+                currentfunc = None
             # Blit to screen
             pygame.display.update()
 
