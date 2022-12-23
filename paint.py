@@ -73,7 +73,7 @@ class App:
         ####### ICONS #########
 
         icons = {
-            "undo": pygame.image.load("./assets/undo1.png"),
+            "undo": pygame.image.load("./assets/redo1.png"),
             "redo": pygame.transform.flip(pygame.image.load("./assets/redo1.png"), True, False),
             "clear": pygame.image.load("./assets/clear1.png"),
             "import": pygame.image.load("./assets/import1.png"),
