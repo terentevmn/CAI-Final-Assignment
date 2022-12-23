@@ -11,11 +11,6 @@ sys.path.insert(0,"./model")
 from model import get_image
 
 
-"""
-TODO:
-- Link
-"""
-
 class App:
 
     def __init__(self):
@@ -73,6 +68,7 @@ class App:
         showBlink = True
 
         shouldUpdate = True
+        overlayActive = False
 
         ####### ICONS #########
 
@@ -224,7 +220,31 @@ class App:
             icon = icons["random"]
             icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
             screen.blit(icon,(self.menuWidth//2,starty + 2*self.menuWidth//2))
+        
+        def drawOverlay():
+            s = pygame.Surface((256*self.scaleAppX,256*self.scaleAppY))        # the size of your rect
+            s.set_alpha(64) 
+
+            pygame.draw.rect(s, colors[0], [0, 0, 256*self.scaleAppX, 256*self.scaleAppY])
+            # Draws drawn rectangles
+            for i in drawings[:cursor]:
+                try:
+                    firstpos, secondpos, color = i
+                    pygame.draw.rect(s, color, [firstpos[0]-self.menuWidth,firstpos[1],secondpos[0]-firstpos[0],secondpos[1]-firstpos[1]])
+                except: # imported picture
+                    randomimage = pygame.transform.scale(i[list(i.keys())[0]], (256*self.scaleAppX, 256*self.scaleAppY))
+                    rect = randomimage.get_rect()
+                    rect = rect.move((0, 0))
+                    s.blit(randomimage, rect)
+
+            if firstPointSelected:
+                p = list(pygame.mouse.get_pos())
+                p[0] = min(max(p[0],self.menuWidth),self.menuWidth + 256*self.scaleAppX)
+                fp, sp = getRectsFromPoints(firstPos, p)
+                pygame.draw.rect(s, selectedColor, [fp[0],fp[1],sp[0]-fp[0],sp[1]-fp[1]])
             
+            screen.blit(s,(self.menuWidth+256*self.scaleAppX,0))
+
         #### BUTTON FUNCTIONS ##
         def clearDrawings():
             """
@@ -361,7 +381,8 @@ class App:
                                 shouldUpdate = True
                     
                     elif posx >= self.menuWidth + self.scaleAppX*256:
-                        shouldUpdate = True
+                        # Overlay
+                        overlayActive = not overlayActive
 
                 elif event.type == pygame.KEYDOWN and input_active: 
                     # For the input bar
@@ -408,7 +429,8 @@ class App:
                     
                 currentfunc = None
             
-
+            if overlayActive:
+                drawOverlay()
 
             # Blit to screen
             pygame.display.update()
