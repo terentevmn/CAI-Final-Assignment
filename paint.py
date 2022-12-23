@@ -10,6 +10,7 @@ import shutil
 sys.path.insert(0,"./model")
 from model import get_image
 
+from threading import Thread
 
 class App:
 
@@ -29,6 +30,7 @@ class App:
         size = (256*self.scaleAppX * 2 + self.menuWidth,256*self.scaleAppY)
 
         screen = pygame.display.set_mode(size)
+        pygame.display.set_caption("cGAN pix2pix model with facades")
         done = False
         clock = pygame.time.Clock()
         clocktick = 60
@@ -79,6 +81,8 @@ class App:
             "import": pygame.image.load("./assets/import.png"),
             "save": pygame.image.load("./assets/save.png"),
             "random": pygame.image.load("./assets/random.png"),
+            "on": pygame.image.load("./assets/on.jpg"),
+            "off": pygame.image.load("./assets/off.jpg"),
         }
         
         #### HELP VARS #########
@@ -220,8 +224,41 @@ class App:
             icon = icons["random"]
             icon = pygame.transform.scale(icon, (self.menuWidth//2,self.menuWidth//2))
             screen.blit(icon,(self.menuWidth//2,starty + 2*self.menuWidth//2))
+
+            if overlayActive:
+                icon = icons["on"]
+                icon = pygame.transform.scale(icon, (self.menuWidth//6,self.menuWidth//6))
+            else:
+                icon = icons["off"]
+                icon = pygame.transform.scale(icon, (self.menuWidth//6,self.menuWidth//6))
+            screen.blit(icon,(self.menuWidth + self.scaleAppX*256, self.scaleAppY*256 - self.menuWidth//6))
         
         def drawOverlay():
+
+            def __getItemAtMouse__():
+                # Iterate over it in reverse, such that you get the the last element overlay of some position
+                mousepos = pygame.mouse.get_pos()
+                # Check if mousepos is at the output image location:
+                if mousepos[0] <= self.menuWidth + self.scaleAppX*256:
+                    return ""
+
+                color = screen.get_at((mousepos[0]-256*self.scaleAppX, mousepos[1]))
+
+                # Get offset
+                curcolor = 0
+                curoffset = 256*3
+                for i in range(len(colors)):
+                    s = 0
+                    for j in range(3):
+                        s += abs(colors[i][j] - color[j])
+                    
+                    if s < curoffset:
+                        curoffset = s
+                        curcolor = i
+
+                return colorMeanings[curcolor]
+            
+                
             s = pygame.Surface((256*self.scaleAppX,256*self.scaleAppY))        # the size of your rect
             s.set_alpha(64) 
 
@@ -241,9 +278,13 @@ class App:
                 p = list(pygame.mouse.get_pos())
                 p[0] = min(max(p[0],self.menuWidth),self.menuWidth + 256*self.scaleAppX)
                 fp, sp = getRectsFromPoints(firstPos, p)
-                pygame.draw.rect(s, selectedColor, [fp[0],fp[1],sp[0]-fp[0],sp[1]-fp[1]])
+                pygame.draw.rect(s, selectedColor, [fp[0]-self.menuWidth,fp[1],sp[0]-fp[0],sp[1]-fp[1]])
             
             screen.blit(s,(self.menuWidth+256*self.scaleAppX,0))
+
+            textFont = pygame.font.Font(None, 15*self.scaleAppX)
+            text_item = textFont.render(__getItemAtMouse__(), True, (255, 255, 255))
+            screen.blit(text_item, pygame.mouse.get_pos())
 
         #### BUTTON FUNCTIONS ##
         def clearDrawings():
@@ -299,10 +340,12 @@ class App:
             screen.blit(s, (0,0))           # (0,0) are the top-left coordinates
 
             textFont = pygame.font.Font(None, 30*self.scaleAppX)
+            text_func = textFont.render(currentfunc, True, (0, 0, 0))
             if showBlink:
                 text_surf = textFont.render(text+"|.jpg", True, (0, 0, 0))
             else:
                 text_surf = textFont.render(text+".jpg", True, (0, 0, 0))
+            screen.blit(text_func, text_func.get_rect(center = (self.menuWidth + (256*self.scaleAppX)//2, size[1]//2 - 30*self.scaleAppX)))
             screen.blit(text_surf, text_surf.get_rect(center = (self.menuWidth + (256*self.scaleAppX)//2, size[1]//2)))
 
 
@@ -398,7 +441,6 @@ class App:
                         currentfunc = None
                     else:
                         text += event.unicode
-                        
             
             screen.fill((0,0,0))
 
