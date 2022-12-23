@@ -12,6 +12,8 @@ To install the necessary modules, run:
 ```bash
 pip install -r requirements.txt
 ```
+The model uses a checkpoint to load in if that is found in /model/training_checkpoints/. This is not included in this GitHub, since the file is 650+MB. It is however included in the ZIP of the submission.
+
 ## Usage
 Once set, you are ready to draw!
 Open `paint.py` and create your own facade. This facade consists of 12 colours, each indicating a different section of the facade. The drawing process consists of placing many rectangles in these different colours. Whilst drawing, you will notice that the model is automatically updating. It will show you what you your transformed drawing. 
