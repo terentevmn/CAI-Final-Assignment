@@ -24,6 +24,8 @@ There are a couple of tools to make use of:
 - Clear: the clear button clears your canvas and all history to it. 
 - Random: imports a random drawn facade from the dataset. This can be used as basis for your drawing, for example.
 
+Furthermore, there is a button in the bottom left corner of the output. Clicking this reveals an overlay of your drawing on the output, so that you can see what part of your drawing is responsible for what structure in the output. This is shown via the colours used in the canvas as well as telling you what that colour means by hovering over it with your mouse.  Click the button once more to turn it back off again.
+
 ## Contributors
 - Lex Janssens, s2989344, Leiden University
 - Maksim Terentev, s2565137, Leiden University 
