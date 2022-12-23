@@ -1,7 +1,6 @@
 # CAI-Final-Assignment
 This project is based on a CycleGAN model using pix2pix to generate facades from drawings. This repository provides the drawing tool and the automatic conversion to said generated facades. 
 
-
 ## Get started:
 In order to get started, clone this repository by:
 ```bash
@@ -13,6 +12,9 @@ To install the necessary modules, run:
 pip install -r requirements.txt
 ```
 The model uses a checkpoint to load in if that is found in /model/training_checkpoints/. This is not included in this GitHub, since the file is 650+MB. It is however included in the ZIP of the submission.
+
+## Notebook
+To find the notebook in order to see how we trained the model and possibly for even more training, look into /model/. In here, you find `CAI_Final_Assignment_pix2pix.ipynb`, which contains the code for training the model. `model.py` contains just the model and a possible checkpoint that can be loaded in, and is used by the painting program once `paint.py` has started up. 
 
 ## Usage
 Once set, you are ready to draw!

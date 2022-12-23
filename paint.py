@@ -10,8 +10,6 @@ import shutil
 sys.path.insert(0,"./model")
 from model import get_image
 
-from threading import Thread
-
 class App:
 
     def __init__(self):
@@ -75,14 +73,14 @@ class App:
         ####### ICONS #########
 
         icons = {
-            "undo": pygame.image.load("./assets/undo.png"),
-            "redo": pygame.image.load("./assets/redo.png"),
-            "clear": pygame.image.load("./assets/clear.png"),
-            "import": pygame.image.load("./assets/import.png"),
-            "save": pygame.image.load("./assets/save.png"),
-            "random": pygame.image.load("./assets/random.png"),
-            "on": pygame.image.load("./assets/on.jpg"),
-            "off": pygame.image.load("./assets/off.jpg"),
+            "undo": pygame.image.load("./assets/undo1.png"),
+            "redo": pygame.transform.flip(pygame.image.load("./assets/redo1.png"), True, False),
+            "clear": pygame.image.load("./assets/clear1.png"),
+            "import": pygame.image.load("./assets/import1.png"),
+            "save": pygame.image.load("./assets/save1.png"),
+            "random": pygame.image.load("./assets/random1.png"),
+            "on": pygame.image.load("./assets/on1.png"),
+            "off": pygame.image.load("./assets/on1.png"),
         }
         
         #### HELP VARS #########
